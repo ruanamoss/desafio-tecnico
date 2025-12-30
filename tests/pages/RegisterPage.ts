@@ -22,17 +22,18 @@ export default class RegisterPage extends BasePage {
   async fillForm(user: User) {
     await this.goto('/register.htm');
     await this.page.waitForLoadState('networkidle');
-    await this.page.fill('input[name="customer.firstName"]', user.firstName);
-    await this.page.fill('input[name="customer.lastName"]', user.lastName);
-    await this.page.fill('input[name="customer.address.street"]', user.address);
-    await this.page.fill('input[name="customer.address.city"]', user.city);
-    await this.page.fill('input[name="customer.address.state"]', user.state);
-    await this.page.fill('input[name="customer.address.zipCode"]', user.zipCode);
-    await this.page.fill('input[name="customer.phoneNumber"]', user.phone);
-    await this.page.fill('input[name="customer.ssn"]', user.ssn);
-    await this.page.fill('input[name="customer.username"]', user.username);
-    await this.page.fill('input[name="customer.password"]', user.password);
-    await this.page.fill('input[name="repeatedPassword"]', user.password);
+    const firstName = this.page.locator('input[name="customer.firstName"]');
+    await firstName.fill(user.firstName);
+    await this.page.locator('input[name="customer.lastName"]').fill(user.lastName);
+    await this.page.locator('input[name="customer.address.street"]').fill(user.address);
+    await this.page.locator('input[name="customer.address.city"]').fill(user.city);
+    await this.page.locator('input[name="customer.address.state"]').fill(user.state);
+    await this.page.locator('input[name="customer.address.zipCode"]').fill(user.zipCode);
+    await this.page.locator('input[name="customer.phoneNumber"]').fill(user.phone);
+    await this.page.locator('input[name="customer.ssn"]').fill(user.ssn);
+    await this.page.locator('input[name="customer.username"]').fill(user.username);
+    await this.page.locator('input[name="customer.password"]').fill(user.password);
+    await this.page.locator('input[name="repeatedPassword"]').fill(user.password);
   }
 
   async submit() {

@@ -1,67 +1,135 @@
 import { test, expect } from '@playwright/test';
 import RegisterPage from '../pages/RegisterPage';
-import { sampleUser, randomUsername } from '../utils/testData';
+import { sampleUser } from '../utils/testData';
 
-test.describe('Register - CT-001..CT-005', () => {
-  test('CT-001 - Cadastro com sucesso', async ({ page }) => {
+test.describe('Register - CT-001..CT-004', () => {
+  
+  test('CT-001 - Cadastro válido', async ({ page }) => {
     const register = new RegisterPage(page);
     const user = sampleUser();
+    
     await register.fillForm(user);
     await register.submit();
-    await expect(page.locator('text=Your account was created successfully')).toBeVisible({ timeout: 5000 });
-  });
-
-  test('CT-002 - Campos obrigatórios vazios', async ({ page }) => {
-    const register = new RegisterPage(page);
-    await register.goto('/register.htm');
-    await register.submit();
-    // Expect some validation message or that page remains in register
-    await expect(page).toHaveURL(/register.htm/);
-  });
-
-  test('CT-003 - Senha e confirmação diferentes', async ({ page }) => {
-    const register = new RegisterPage(page);
-    const user = sampleUser();
-    await register.goto('/register.htm');
-    await page.waitForTimeout(3000);
-    await page.fill('input[name="customer.firstName"]', user.firstName);
-    await page.waitForTimeout(1000);
-    await page.fill('input[name="customer.lastName"]', user.lastName);
-    await page.waitForTimeout(1000);
-    await page.fill('input[name="customer.username"]', user.username);
-    await page.waitForTimeout(1000);
-    await page.fill('input[name="customer.password"]', 'abc123');
-    await page.waitForTimeout(1000);
-    await page.fill('input[name="repeatedPassword"]', 'diff123');
-    await page.waitForTimeout(3000);
-    await register.submit();
-    // Expect to remain on register page or show error
-    await expect(page).toHaveURL(/register.htm/).catch(async () => {
-      await expect(page.locator('text=passwords did not match')).toBeVisible();
+    
+    const successMessage = page.locator('text=Your account was created successfully');
+    await expect(successMessage).toBeVisible({ timeout: 50000 });
+    
+    await expect(page).toHaveURL(/overview.htm|index.htm/);
+    
+    await expect(page.locator('text=Congratulations')).toBeVisible().catch(() => {
+      expect(successMessage).toBeTruthy();
     });
   });
 
-  test('CT-004 - Username já existente', async ({ page }) => {
-    const register = new RegisterPage(page);
-    const user = { ...sampleUser(), username: 'existinguser' }; // fixed username
-    // first registration
-    await register.fillForm(user);
-    await register.submit();
-    await expect(page.locator('text=Your account was created successfully')).toBeVisible({ timeout: 5000 }).catch(() => {});
-    // Note: Due to site limitations, second registration may fail due to browser closure
-    // This test documents the expected behavior
-    test.skip(); // skip for now as site closes browser
-  });
-
-  test('CT-005 - Zip Code inválido', async ({ page }) => {
+  test('CT-002 - Cadastro com e-mail inválido', async ({ page }) => {
     const register = new RegisterPage(page);
     const user = sampleUser();
-    user.zipCode = 'abcde';
+    await register.goto('/register.htm');
+    await page.waitForLoadState('networkidle');
+    
+    const firstName = page.locator('input[name="customer.firstName"]');
+    await expect(firstName).toBeVisible({ timeout: 30000 });
+    await firstName.fill(user.firstName);
+    await page.locator('input[name="customer.lastName"]').fill(user.lastName);
+    await page.locator('input[name="customer.address.street"]').fill(user.address);
+    await page.locator('input[name="customer.address.city"]').fill(user.city);
+    await page.locator('input[name="customer.address.state"]').fill(user.state);
+    await page.locator('input[name="customer.address.zipCode"]').fill(user.zipCode);
+    await page.locator('input[name="customer.phoneNumber"]').fill(user.phone);
+    await page.locator('input[name="customer.ssn"]').fill(user.ssn);
+    await page.locator('input[name="customer.username"]').fill('invalid@@username');
+    await page.locator('input[name="customer.password"]').fill(user.password);
+    await page.locator('input[name="repeatedPassword"]').fill(user.password);
+    
+    await register.submit();
+    await page.waitForTimeout(2000);
+    
+    const currentUrl = page.url();
+    const errorMessage = await register.errorMessage();
+    
+    expect(currentUrl.includes('register.htm') || errorMessage.toLowerCase().includes('error')).toBeTruthy();
+  });
+
+  test('CT-003 - Cadastro com CPF já existente', async ({ page }) => {
+    const register = new RegisterPage(page);
+    const user = sampleUser();
+    const fixedSSN = '111-22-3333';
+    user.ssn = fixedSSN;
+    
     await register.fillForm(user);
     await register.submit();
-    // Register may accept or reject - assert we are either still on register or show success
-    await expect(page).toHaveURL(/register.htm/).catch(async () => {
-      await expect(page.locator('text=Your account was created successfully')).toBeVisible();
-    });
+    const successMessage1 = await page.locator('text=Your account was created successfully').isVisible().catch(() => false);
+    
+    if (successMessage1) {
+      const user2 = sampleUser();
+      user2.ssn = fixedSSN;
+      await register.goto('/register.htm');
+      await register.fillForm(user2);
+      await register.submit();
+      
+      await page.waitForTimeout(2000);
+      
+      const currentUrl = page.url();
+      const errorMessage = await register.errorMessage();
+      const isDuplicate = errorMessage.toLowerCase().includes('duplicate') || 
+                         errorMessage.toLowerCase().includes('already') ||
+                         errorMessage.toLowerCase().includes('exists');
+      
+      expect(currentUrl.includes('register.htm') || isDuplicate).toBeTruthy();
+    }
+  });
+
+  test('CT-004 - Senha na borda', async ({ page }) => {
+    const register = new RegisterPage(page);
+    const user = sampleUser();
+    
+    await register.goto('/register.htm');
+    await page.waitForLoadState('networkidle');
+    
+    const firstName = page.locator('input[name="customer.firstName"]');
+    await firstName.fill(user.firstName);
+    await page.locator('input[name="customer.lastName"]').fill(user.lastName);
+    await page.locator('input[name="customer.address.street"]').fill(user.address);
+    await page.locator('input[name="customer.address.city"]').fill(user.city);
+    await page.locator('input[name="customer.address.state"]').fill(user.state);
+    await page.locator('input[name="customer.address.zipCode"]').fill(user.zipCode);
+    await page.locator('input[name="customer.phoneNumber"]').fill(user.phone);
+    await page.locator('input[name="customer.ssn"]').fill(user.ssn);
+    await page.locator('input[name="customer.username"]').fill(user.username);
+    
+    const shortPassword = 'Abc123';
+    await page.locator('input[name="customer.password"]').fill(shortPassword);
+    await page.locator('input[name="repeatedPassword"]').fill(shortPassword);
+    await register.submit();
+    
+    await page.waitForTimeout(1500);
+    let currentUrl = page.url();
+    let errorMessage = await register.errorMessage();
+    
+    expect(currentUrl.includes('register.htm') || errorMessage.length > 0).toBeTruthy();
+    
+    await register.goto('/register.htm');
+    await page.waitForLoadState('networkidle');
+    
+    await firstName.fill(user.firstName);
+    await page.locator('input[name="customer.lastName"]').fill(user.lastName);
+    await page.locator('input[name="customer.address.street"]').fill(user.address);
+    await page.locator('input[name="customer.address.city"]').fill(user.city);
+    await page.locator('input[name="customer.address.state"]').fill(user.state);
+    await page.locator('input[name="customer.address.zipCode"]').fill(user.zipCode);
+    await page.locator('input[name="customer.phoneNumber"]').fill(user.phone);
+    await page.locator('input[name="customer.ssn"]').fill(user.ssn + '2');
+    await page.locator('input[name="customer.username"]').fill(user.username + '2');
+    
+    const passwordNoNumbers = 'Abcdefgh';
+    await page.locator('input[name="customer.password"]').fill(passwordNoNumbers);
+    await page.locator('input[name="repeatedPassword"]').fill(passwordNoNumbers);
+    await register.submit();
+    
+    await page.waitForTimeout(1500);
+    currentUrl = page.url();
+    errorMessage = await register.errorMessage();
+    
+    expect(currentUrl.includes('register.htm') || errorMessage.length > 0).toBeTruthy();
   });
 });

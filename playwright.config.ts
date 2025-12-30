@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  timeout: 60000, // balanced global timeout
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -10,8 +11,8 @@ export default defineConfig({
   use: {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     trace: 'on-first-retry',
-    actionTimeout: 10000,
-    navigationTimeout: 30000,
+    actionTimeout: 20000, // slower form interactions on Parabank
+    navigationTimeout: 60000, // slower navigations on Parabank
   },
 
   /* Configure projects for major browsers */

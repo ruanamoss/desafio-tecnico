@@ -7,14 +7,17 @@ export default class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string) {
-    // If not on login page, go to it
     if (!this.page.url().includes('index.htm')) {
       await this.goto('/index.htm');
     }
     await this.page.waitForLoadState('networkidle');
-    await this.page.fill('input[name="username"]', username);
-    await this.page.fill('input[name="password"]', password);
-    await this.page.click('input[value="Log In"]');
+    const usernameInput = this.page.locator('input[name="username"]');
+    const passwordInput = this.page.locator('input[name="password"]');
+    const submitButton = this.page.locator('input[value="Log In"]');
+
+    await usernameInput.fill(username);
+    await passwordInput.fill(password);
+    await submitButton.click();
   }
 
   async loginErrorMessage() {
