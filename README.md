@@ -1,4 +1,4 @@
-# Desafio 2 — Automação Web com Playwright (POC)
+# Desafio — Automação Web com Playwright (POC)
 
 Projeto de prova de conceito (POC) para automação de testes do ParaBank (Parasoft).
 
@@ -12,7 +12,7 @@ Projeto de prova de conceito (POC) para automação de testes do ParaBank (Paras
 
 1. Clone ou baixe o repositório:
    ```bash
-   git clone <URL_DO_REPOSITORIO>
+   git clone https://github.com/ruanamoss/desafio-tecnico.git
    cd desafio-tecnico
    ```
 
