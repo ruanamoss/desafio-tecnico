@@ -1,7 +1,7 @@
 {
-  "name": "desafio-tecnico",
+  "name": "banking-qa-automation",
   "version": "1.0.0",
-  "description": "",
+  "description": "Automated testing suite for banking system using Playwright",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test"
